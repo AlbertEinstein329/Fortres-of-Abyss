@@ -1,0 +1,48 @@
+# Carpetas generadas automáticamente por Unity (No se deben subir)
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+
+# Archivos de memoria y perfiles
+/[Mm]emoryCaptures/
+/[Pp]rofiler/
+
+# Archivos autogenerados para Visual Studio / IDEs
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# Configuración del editor local
+.vs/
+.idea/
+.vscode/
+
+# Archivos de sistema operativo
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Información sensible y certificados (Claves de firma, pfx, keystores)
+*.keystore
+*.pfx
+*.publishsettings
+private_keys/
