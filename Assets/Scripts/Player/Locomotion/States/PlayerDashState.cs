@@ -20,14 +20,12 @@ namespace AbyssFirstPersonController
             // Start Dash Effect
             ctx.fovChangeSpeed = 20f;
             ctx.targetFov = 90f;
-            Debug.Log("Dash Start!");
-            
         }
 
         public override void UpdateState()
         {
-            Debug.Log(ctx.targetFov);
-            ctx.allowsCombatActions = true;
+            ctx.combatPermissionsType = CombatPermissions.Primary;
+            ctx.currentLocomotionContext = LocomotionContext.Dashing;
             // Dash physics logic...
             ApplyDash();
             dashTimer += Time.deltaTime;
@@ -39,7 +37,6 @@ namespace AbyssFirstPersonController
             // End Dash Effect
             ctx.targetFov = ctx.normalFov;
             ctx.fovChangeSpeed = OrigialFovSpeed;
-            Debug.Log("Dash End!");
         }
 
         public override void CheckSwitchStates()

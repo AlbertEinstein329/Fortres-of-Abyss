@@ -30,10 +30,12 @@ namespace AbyssFirstPersonController
 
         public override void UpdateState()
         {
+            ctx.combatPermissionsType = CombatPermissions.None;
+            ctx.currentLocomotionContext = LocomotionContext.LedgeGrabbing;
 
             if (!isClimbing)
             {
-                ctx.allowsCombatActions = false;
+                
                 hangTimer += Time.deltaTime;
 
                 if (ctx.useClimbTilt)

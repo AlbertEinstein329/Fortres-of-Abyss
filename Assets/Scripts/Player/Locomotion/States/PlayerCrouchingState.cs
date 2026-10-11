@@ -19,7 +19,8 @@ namespace AbyssFirstPersonController
 
         public override void UpdateState()
         {
-            ctx.allowsCombatActions = true;
+            ctx.combatPermissionsType = CombatPermissions.All;
+            ctx.currentLocomotionContext = LocomotionContext.Crouching;
             HandleCrouchMovement();
 
             if (ctx.enableSmoothCrouch)

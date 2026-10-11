@@ -16,7 +16,8 @@ namespace AbyssFirstPersonController
 
         public override void UpdateState()
         {
-            ctx.allowsCombatActions = false;
+            ctx.combatPermissionsType = CombatPermissions.None;
+            ctx.currentLocomotionContext = LocomotionContext.Swimming;
             HandleSwimMovement();
             CheckSwitchStates();
 

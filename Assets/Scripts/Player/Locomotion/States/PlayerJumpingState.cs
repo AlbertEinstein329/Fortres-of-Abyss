@@ -18,8 +18,9 @@ namespace AbyssFirstPersonController
             ctx.targetFov = ctx.normalFov;
             ctx.currentBobIntensity = 0;
             ctx.targetTilt = 0;
+            ctx.combatPermissionsType = CombatPermissions.All;
+            ctx.currentLocomotionContext = LocomotionContext.Jumping;
 
-            
             ApplyGravity();
             HandleAirMovement();
             CheckSwitchStates();
