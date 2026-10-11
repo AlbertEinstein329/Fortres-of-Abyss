@@ -1,0 +1,270 @@
+# Contexto: Fortress of Abyss — combate sobre FirstPersonController (Abyss)
+
+Resumen de una conversación larga (2026-09-30, actualizado 2026-10-02). **El código real manda.** Si algo de acá contradice los archivos del proyecto, gana el archivo. Este documento guarda decisiones y razones, no el estado exacto del código. Leer los archivos reales antes de opinar.
+
+**Jerarquía de fuentes:** código real > este CLAUDE.md y lo dicho en el chat > documentos de diseño antiguos.
+
+Documentos de diseño (fuera del repo):
+- `D:\Programacion\Fortress of abyss documents\Fortress of Abyss GDD.txt` — GDD **desactualizado**: sirve de contexto general y de la simulación del calabozo (ELO), pero lo de este archivo lo pisa.
+- `D:\Programacion\Fortress of abyss documents\Sistema de skills\Skill system.txt` — croquis vigente del sistema de habilidades (ver sección 0.4). Es una base modificable, no definitivo.
+- `D:\Programacion\Fortress of abyss documents\Sistema de skills\Requisitos para desbloquear habilidades.csv` — 21 habilidades (ids 1-10 Arquero, 11-21 Guerrero) con descripción y requisito de desbloqueo; la cantidad de veces está "por definir". Ver sección 3.8. **Es solo un borrador**: sus ids 1-21 son provisionales (ver el esquema de ids definitivo en 3.8).
+
+## 0. Visión del juego y alcance
+
+### 0.1 Qué es
+
+Fortress of Abyss: calabozo/laberinto procedural en primera persona con una ciudad en la superficie. El GDD original suma siege defense (defender la ciudad de hordas) y una simulación offline del calabozo. El pilar diferenciador es que **el calabozo vive sin el jugador** (los monstruos suben de nivel entre ellos mediante cálculo, sin simulación en tiempo real).
+
+### 0.2 División en dos etapas (decidido)
+
+Por complejidad, el juego se divide en dos etapas, de menos a más complejo:
+
+- **Etapa 1 — Modo laberinto (FPS de calabozo).** Es lo que se construye ahora. Incluye una **aldea/ciudad simple en la superficie**, sin siege defense: mejorar armas, comprar pociones y objetos, vender lo que no se necesita.
+- **Etapa 2 — Siege defense** (defender la ciudad de hordas que salen del laberinto, defensas, trampas, eventos de mapa) y, más adelante, lo social/cooperativo del GDD.
+- La idea es juntar todo al final con más experiencia en un juego mejorado.
+- Recomendación hecha (a confirmar con el usuario): **un solo proyecto de Unity con escenas separadas** (laberinto, aldea, sala del jefe, y más adelante la ciudad defendible), compartiendo `Player`, guardado y seed. Evitar dos proyectos separados: juntarlos después es doloroso (input, guardado, namespaces, assets).
+
+### 0.3 Simulación del calabozo en la Etapa 1
+
+- Al volver a entrar al laberinto desde la aldea se corre una simulación que cambia el tipo de enemigo, su nivel, etc., para que los niveles nunca se sientan repetitivos.
+- Detalle matemático (ELO, grupos de 10, refill, clases tipo piedra-papel-tijera, traits): ver la parte final del GDD. Tiene puntos abiertos (K-factor, curva de nivel, orden de refill vs combate).
+- Consecuencia de diseño: los enemigos deben nacer con datos que la simulación necesitará (nivel, clase, seed), aunque la simulación completa llegue después del núcleo jugable.
+- Jefe final: stats fijos, independiente de la simulación. Sala del jefe en escena aparte, con llaves para abrir la puerta.
+
+### 0.4 Clases y habilidades (el chat manda sobre el GDD)
+
+- **Clases del jugador:** Arquero y Guerrero. Pícaro y Paladín quedan como posibles. **Mago descartado por ahora** hasta tener claras sus habilidades (el bastón mágico queda en pausa con él). El GDD decía 4 clases con Asesino: obsoleto.
+- **Habilidades (sistema vigente, no el del GDD "mejoran al usarlas"):**
+  1. El jugador gana maestría y puntos de habilidad según el arma que usa (estilo Skyrim).
+  2. Daño y velocidad de ataque suben pasivamente con la maestría del arma.
+  3. La movilidad también es una maestría (sigilo, velocidad de sprint, altura de salto...).
+  4. Las habilidades **activas se desbloquean cumpliendo requisitos de acciones** (ej.: arco, "Disparo cargado" = 200% de daño, se desbloquea acertando o matando 10 enemigos con el arco tensado más de 1 s). La condición se guarda y, al cumplirse, desbloquea la habilidad.
+  5. **Libros de habilidades** equipables: dan buffs pasivos según su clase y contienen los requisitos de desbloqueo de sus habilidades. Los puntos de habilidad se gastan dentro del libro: sin libro de arquero no se gastan puntos en habilidades de arquero, pero sí se pueden desbloquear.
+- Posibles requisitos de skill: ataque en slide o en dash (por eso Dash y Sliding permiten atacar, ver 3.2).
+
+### 0.5 Versión mínima del laberinto (propuesta, pendiente de confirmar)
+
+- Player: locomoción + combate (en curso).
+- Armas: espada y arco (el arco valida la interfaz de arma). Sin bastón.
+- Progresión: maestría pasiva por arma, 1 libro por clase (Guerrero, Arquero) y 1 habilidad activa por arma.
+- Enemigos: 2 o 3 tipos con IA simple (perseguir y atacar), con datos de nivel/clase/seed.
+- Nivel: primero uno fijo hecho a mano para probar combate; después un generador simple de 1 capa con salas de tesoro colocadas a mano, llaves y puerta del jefe.
+- Jefe: sala en escena aparte, stats fijos.
+- Aldea mínima (una escena, solo menús/NPCs): herrero (mejorar armas) y tienda (comprar/vender pociones y objetos). Sin construcción.
+- Ítems: pociones de vida, oro, un inventario simple.
+- Simulación: versión reducida primero (reroll por seed + nivel creciente por ciclos al reentrar); ELO completo cuando lo demás funcione.
+- Guardado simple (seed, ciclo, oro, maestrías, libros).
+- Fuera de la mínima: piedras brillantes, mapa progresivo, niebla/noche, brújula de peligro, run report, semillas/leaderboards, mago, siege defense, cooperativo.
+- Orden sugerido: combate en nivel fijo → enemigos con IA → maestrías y habilidades → aldea e ítems → jefe → generación procedural → simulación.
+
+## 1. Cómo trabajar con el usuario
+
+- Está aprendiendo. Guiar de forma conceptual, simple, explicando el porqué. Rol de profesor, no de programador.
+- **Nunca modificar scripts (`.cs`).** Eso es tarea del usuario. **Excepción: el único archivo que Claude puede editar es este `CLAUDE.md`** (permiso dado el 2026-10-02).
+- **Mecánica de enseñanza (cambio del 2026-10-12):** el usuario solo hizo un bootcamp de Microsoft (sabe lo básico de C#). Claude ahora **pasa el código** en bloques concretos (C# exacto y copiable, nunca un script completo) y deja **una tarea pequeña de nivel junior** para que el usuario la complete, con consejos. La dificultad sube gradualmente: nivel 1 = extender un patrón que ya existe en su código; nivel 2 = escribir una clase chica propia a partir de una firma dada; nivel 3 = diseñar una función a partir de una especificación. Claude sigue sin editar scripts (solo el CLAUDE.md) y revisa el código real que el usuario completa.
+- Usar los términos de programación en inglés (field, type, method, enum, flag...) al explicar, no traducirlos.
+- Respuestas directas, en español, sin introducciones. Si algo está mal, decirlo primero. Si discrepás, explicar el motivo, la alternativa y el riesgo concreto. No ceder sin información nueva.
+- Etiquetar confianza cuando aporta: [Certain], [Likely], [Guessing].
+- Leer siempre el estado real de los archivos; hubo fricción cuando el chat no los veía.
+- **Avisar los typos** de nombres (variables, métodos, comentarios) que se vean al leer el código; el usuario los quiere corregir él mismo (pedido del 2026-10-05).
+- **No avisar** cuando los ids de skill de los assets de prueba difieran de los del CSV (el CSV es un borrador; pedido del 2026-10-11). Sí avisar si un id de una acción y uno de `SkillsData` no coinciden **entre sí** y eso rompe algo.
+
+## 2. Objetivo técnico
+
+Agregar combate a un FPS controller basado en el asset EasyPeasyFirstPersonController (patrón State + Factory para locomoción):
+
+- Ataques sin romper la locomoción (atacar quieto, caminando, en sprint, agachado, saltando).
+- Varias armas con habilidades activas y pasivas propias: espada y arco ahora (bastón mágico en pausa). Sin combos por ahora.
+- Animación en primera persona. No hay brazos: las armas son assets de la Store montadas bajo la cámara.
+- El namespace del proyecto es `AbyssFirstPersonController` (antes `EasyPeasyFirstPersonController`, con un typo intermedio `EasyPeasyFirtPersonController` que rompía la compilación).
+
+## 3. Arquitectura decidida
+
+### 3.1 Dos máquinas de estado independientes
+
+- **Locomoción:** `FirstPersonController` + `PlayerBaseState` / `PlayerStateFactory`. Estados: Grounded, Jumping, Sliding, Crouching, Fall, LedgeGrab, Swimming, Dash.
+- **Combate:** `PlayerCombatController` + `CombatBaseState` / `CombatStateFactory`. Estados: `CombatIdleState`, `CombatAttackingState`. Mismo GameObject.
+- "Un estado a la vez" vale dentro de cada máquina, no entre las dos. Por eso atacar caminando o saltando no genera estados combinados.
+- Acoplamiento en una sola dirección: combate lee de locomoción, locomoción no sabe que existe combate. Única excepción prevista: el dash llama a un método genérico de interrupción en combate.
+- En `CombatBaseState`, `ctx` y `combatStateFactory` son `protected` y `SwitchState` es `protected`. `PlayerCombatController.Update` solo llama a `UpdateState()`; cada estado llama a `CheckSwitchStates()` **al final de su propio `UpdateState`** (un solo lugar, sin doble llamada).
+
+### 3.2 Permisos de combate (qué botón puedo usar ahora)
+
+La locomoción se autodeclara. Un field en `FirstPersonController` (`combatPermissionsType`, type `CombatPermissions`) que cada estado de locomoción escribe **en cada frame de `UpdateState`**. `CombatIdleState` lo lee antes de aceptar cada botón.
+
+- Enum `[Flags] CombatPermissions { None, Primary = 1<<0, Secondary = 1<<1, All }`.
+- Valores actuales: Grounded, Crouching, Fall, Jumping y Sliding = `All`; Dash = `Primary`; LedgeGrab y Swimming = `None`.
+- Dash y Sliding **permiten atacar a propósito**: el diseño de habilidades puede pedir "ataque en dash / en slide" como requisito (el dash attack es probable). Mientras no exista el filtro por contexto de cada habilidad, cualquier ataque puede dispararse ahí.
+- Chequeo por botón, bit a bit, leyendo el permiso en una variable local: `(permissions & CombatPermissions.Primary) != 0 && combatInput.PrimaryAttack`. Nunca `== All`: bloquearía un botón cuando un estado solo declara el otro.
+- Solo se escribe en `UpdateState` (no hace falta en `EnterState`). Un estado no necesita "apagar" el permiso al salir: el estado siguiente lo sobrescribe en su primer frame. En `LedgeGrab` va al inicio de `UpdateState`, fuera del `if (!isClimbing)`.
+- Motivo: evitar listas de tipos concretos (`is PlayerDashState`) dentro de combate. Un estado de locomoción nuevo solo escribe su propio valor.
+
+### 3.3 Contextos de habilidad (en qué movimiento funciona cada habilidad)
+
+- **Cambio de propósito (2026-10-03):** el contexto ya no es principalmente un filtro para lanzar habilidades. Una habilidad desbloqueada se usa sin condiciones de locomoción (ver 0.4 y 3.8). El contexto sirve para (a) saber **dónde estaba el jugador cuando ocurrió una acción** al contar requisitos de desbloqueo, y (b) leer bonos (ej.: sigilo = `Crouching`). El filtro `allowedContext` en `CombatAction` queda como herramienta opcional (default `All`).
+- Enum `[Flags] LocomotionContext` en `LocomotionContext.cs`: None, Grounded, Falling, Jumping, Sliding, Swimming, Dashing, Crouching, LedgeGrabbing, All. **Cada estado de locomoción escribe su propio valor, uno solo** (Crouching no incluye Grounded). Esto resolvió la decisión abierta de Dash: ahora Dashing, Sliding y Crouching sí están en el enum, que es lo que necesitan los requisitos de desbloqueo.
+- Field `currentLocomotionContext` en `FirstPersonController`: lo que pasa AHORA; lo escribe cada estado de locomoción en cada frame. Field `allowedContext` en `CombatAction` (default `All`): dato fijo de la acción.
+- Filtro: `(allowedContext & currentLocomotionContext) != 0`. Corregido y probado (2026-10-03): en `CombatIdleState.TryStartAction` se rechaza con `if ((locoContext & action.allowedContexts) == 0) return;` antes del `SwitchState`. El field se renombró a `allowedContexts`.
+- El filtro es "cualquiera de" (`!= 0`), nunca `== allowedContext` (eso exigiría todos los bits). Se nombró `currentLocomotionContext` (y no `currentContext`) para no confundirse con los parámetros `currentContext` de los constructores de estados.
+- Los filtros solo se miran al **entrar** a una acción (permiso de botón → acción existe en el slot → `allowedContexts`). Dentro de `CombatAttackingState` nada vuelve a mirarlos; si algo cambia a mitad de ataque lo resuelve la interrupción (3.6).
+- Motivo: los permisos de botón son chicos y estables; las habilidades crecen sin límite. Cada habilidad guarda su propio requisito para que el enum central no crezca con cada habilidad.
+
+### 3.4 Armas, slots y acciones (implementado para la espada)
+
+- El arma no es un estado. El estado responde "cuándo / cuánto dura"; las armas y los datos responden "qué hace".
+- Un solo estado genérico de acción (`CombatAttackingState`). Más adelante, un estado genérico de carga/canalización para habilidades sostenidas. Nunca uno por arma ni por ataque.
+- **Flujo actual:** botón → permiso (`CombatPermissions`) → `SwordWeapon.GetAction(slot)` (puede devolver `null` = sin acción) → `SwitchState(factory.Attack(action))` → `Attacking.EnterState` llama a `weapon.BeginAction(action)` (velocidad + trigger al Animator) → un Animation Event llama a `SwordWeapon.AnimEvent_ActionEnd()` → el controller marca `actionFinished` → `Attacking.CheckSwitchStates` vuelve a Idle.
+- Piezas: `CombatSlot` (botón lógico: Primary, Secondary, luego habilidades), `CombatAction` (datos serializables: nombre, `animatorTrigger`, `speed`), `SwordWeapon` (tabla slot → acción, Animator propio, recibe el Animation Event, vive en el mismo GameObject que el Animator).
+- **Decisión:** la acción viaja como **parámetro** de `factory.Attack(action)`, no como field "acción actual" del controller. Las instancias de estado son nuevas en cada transición, así que no queda un valor viejo.
+- Acción = datos (+ comportamiento solo cuando un dato no alcanza). El swing de la espada es puro dato; el arco necesita lógica propia: click derecho tensa (mantenido), click izquierdo dispara, soltar el derecho cancela. Esa lógica vive en la clase del arma.
+- Las pasivas son modificadores de datos, no estados.
+- **Base de armas (decidido, en curso):** una **clase base abstracta** `Weapon : MonoBehaviour` en vez de una interfaz, porque Unity no serializa fields de tipo interfaz (no se podría arrastrar el arma al Inspector) y la base permite compartir código (Animator, referencia al controller, `AnimEvent_ActionEnd`). `abstract` = cada arma lo implementa; `virtual` = comportamiento por defecto ampliable. Hoy solo 3 sitios dependen de `SwordWeapon`: field `equippedWeapon`/`EquippedWeapon` en el controller, `GetAction` en `CombatIdleState`, `BeginAction` en `CombatAttackingState`. Poner en la base solo lo que se usa hoy; lo que necesite el arco (cargar, cancelar) se agrega al construirlo. Fase 2: `Initialize(PlayerCombatController)` en la base, llamado desde el `Awake` del controller (reemplaza el `GetComponentInParent` del arma). Fase 3: arco mínimo + estado genérico de carga. No renombrar los métodos de los Animation Events (`AnimEvent_*`) o los clips los pierden.
+- **Estado de la base de armas (2026-10-07):** fase 1 hecha y probada. Hay **ambas cosas**: `IWeapon` (contrato: `Initialize`, `GetAction`, `BeginAction`) y `WeaponBase : MonoBehaviour, IWeapon` (código compartido: `animator`, `hitOrigin`, `enemyMask`, `combat`, `currentAction`, `startContext`, `BeginAction` virtual, `AnimEvent_ActionEnd` virtual, `AnimEvent_ActionHit` abstract). `SwordWeapon : WeaponBase` solo tiene su tabla de acciones, la esfera y el gizmo. Carpeta `Player\Waepons\` (typo: debe ser `Weapons`; y `CloseRangeWaepon` → `CloseRangeWeapon`; renombrar **desde el Project de Unity**). `IWeapon` está completa para lo que existe hoy; candidatos futuros (solo cuando hagan falta): `Interrupt()`, un `Tick` para input mantenido (arco), tipo de arma para el `HitReport`. Los `AnimEvent_*` no van en la interfaz.
+- **Fase 2 (hecha y probada, 2026-10-07; falta solo `enabled = false; return;` en la guarda de `null` del controller, con `Debug.LogError(..., this)`; carpetas ya renombradas a `Weapons` / `CloseRangeWeapon`). Plan original, "tell, don't ask":** (1) en el controller, field `[SerializeField] WeaponBase equippedWeapon` y propiedad `public IWeapon EquippedWeapon => equippedWeapon` (el Inspector no serializa interfaces; los estados dependen solo del contrato); hoy el controller todavía usa `SwordWeapon`. (2) `equippedWeapon.Initialize(this)` en el `Awake` del controller. (3) Borrar el `Awake` de `SwordWeapon` (`GetComponentInParent`). (4) Guarda de `null` con `Debug.LogError` + `enabled = false` si falta el arma.
+- **Fase 3, el arco (diseño 2026-10-07, decisiones confirmadas; **hito 1 hecho, revisado y probado (2026-10-10)**; hito 2 en curso; resto: `IWeapon.Interrupt` todavía tiene cuerpo `{ }` y debe ser solo la firma `void Interrupt();`):** la espada sigue el molde "entrar → animación → evento de fin"; en el arco el **input decide cuándo termina** (click derecho mantenido tensa, click izquierdo dispara, soltar el derecho cancela). Piezas: `CombatChargingState` **genérico** (no sabe qué es un arco; cada frame pasa el input al arma y recibe un resultado); enum de resultado (`Running`, `Finished`, `Cancelled`); en `IWeapon` un `Tick` por frame (recibe `ICombatInputManager`) e `Interrupt()`; en `CombatAction` un campo de tipo de acción (instantánea / de carga) para que `CombatIdleState.TryStartAction` elija `Attack(action)` o `Charge(action)`; método `Charge` en la factory. Cancelar **no** hace daño ni gasta recursos (3.6); lo resuelve el arma. **[Confirmado por el usuario, 2026-10-07] El contexto del arco se captura al soltar la flecha**, no al empezar a tensar (el arma lee `currentLocomotionContext` en ese momento). **[Aceptado] Hitscan primero** (`Physics.Raycast` desde `hitOrigin`), flecha física después. **Animación del arco (decidido por el usuario, 2026-10-07): procedural con 2 posiciones** (hacia atrás al tensar, hacia adelante al soltar), con el arco de la Asset Store, **sin Animator ni Animation Events**; después del hito 1, interpolando por un valor de carga 0-1 (que sirve también para el daño por carga del hito 3). Por eso `BowWeapon` sobrescribe `BeginAction` **sin llamar a `base`** (el `animator` de la base sería `null`). Trampas del hito 1: `ActionKind.Instant` debe ser el primer valor (0) para no cambiar las acciones ya guardadas; el arco no puede usar la convención de la espada de "trigger vacío = sin acción"; para soltar usar el nivel `!SecondaryHeld` y no el pulso `SecondaryReleased` (el pulso puede perderse); `Primary` (disparo) tiene prioridad sobre soltar; el contexto del disparo se lee en ese momento con `combat.fpscontroller.currentLocomotionContext`. `Tick` por defecto en la base devuelve `Finished` (nunca deja trabado). Hito 1 en pasos: enums `ActionStatus` / `ActionKind`, campo `kind` en `CombatAction`, `Tick`/`Interrupt` en `IWeapon` y `WeaponBase`, `Charge` en la factory, `CombatChargingState`, elección de estado en `TryStartAction`, `BowWeapon` con logs. Sin dependencia de Animation Events, y `BaseAction`/`BeginAction` de la base llama al Animator (sobrescribir o proteger contra `null`). Para probar, cambiar `equippedWeapon` en el Inspector. Observación: `AnimEvent_ActionHit` es `abstract` en `WeaponBase` y obligaría al arco a un override vacío; considerar `virtual` con cuerpo vacío. Fuera de alcance por ahora: carga como dato (habilita skills 2 y 3 y agrega tiempo de carga y tipo de arma al `HitReport`), animaciones, flecha física (skill 7), munición (skill 8), re-chequear permisos mientras se tensa (lo cubre la interrupción). Hitos: (1) esqueleto del flujo con logs; (2) disparo real con `ReportHit`; (3) carga como dato.
+- **Hito 2 del arco (plan 2026-10-10; 2a hecha y funcionando, pendiente corregir la dirección del rayo y refactorizar, 2026-10-11):** *Hallazgos del 2026-10-11:* el rayo salía hacia la izquierda porque `BowWeapon.hitOrigin` estaba vacío y el código tenía un respaldo silencioso a `transform.forward`; además el objeto "BowWeapon" (contenedor del modelo, hijo de la cámara, rotación Y = -90°) es también el `hitOrigin` de la espada. Solución: un objeto vacío hijo de la cámara, `AimOrigin`, con posición y rotación en cero, asignado como `hitOrigin` de **las dos** armas; el visual (rotado) y el punto de mira son cosas separadas. En la escena: `hitMask` solo tenía el layer Enemy (falta el entorno, sin el jugador) y `drawAction.attackRange` era 2. Los `using UnityEditor.Search;` y `using static UnityEngine.UI.Image;` de `BowWeapon` (autocompletado del IDE) rompen el build: borrarlos. **Revisión 2026-10-11: la refactorización de `BowWeapon` quedó bien y el rayo ya tiene `hitOrigin` sin rotación; pendientes en la escena: `drawAction.skillId` debe ser 0 (estaba en 10), reasignar el `hitOrigin` de la espada (seguía apuntando al contenedor rotado), mover el `hitOrigin` a `(0,0,0)` (estaba en `0.45, -0.106, 0.756`), y revisar/guardar los ids 17 y 19 de `SkillsData` (el archivo aparece cruzado otra vez).** Refactor acordado: `Tick` corto con cláusulas de guarda (`FireArrow`, `CancelDraw`), `TryShoot(out IDamageable)` como único lugar que sabe que el disparo es un rayo, `DrawShotRay` con `[Conditional("UNITY_EDITOR")]`, validar `hitOrigin` en `Initialize` (error claro + `GetAction` devuelve `null`), sin respaldo silencioso. *2a, hitscan:* en `BowWeapon.Tick`, al disparar: leer el contexto, `Physics.Raycast` desde `hitOrigin` con `drawAction.attackRange`, y si el primer impacto es `IDamageable` → `TakeDamage(attackDamage)` + `combat.ReportHit(new HitReport(action, fireContext, 1))`; si no, fallo (se descarta). **Construir el reporte antes de poner `currentAction = null`.** El arco necesita su **propia `LayerMask hitMask`** (Enemy + entorno, sin el layer del jugador): con la `enemyMask` de la espada el rayo atravesaría las paredes. `Debug.DrawRay` para depurar. Prueba de punta a punta: agregar la id 10 (`Jumping | Falling`, 3 veces) a `SkillsData`. *2b, movimiento procedural:* separar "dónde quiero estar" (`targetPosition`, lo eligen `BeginAction` / `Tick` / `Interrupt`) de "cómo me muevo" (`Update` con `Vector3.MoveTowards`); posición de reposo guardada en `Awake`, tensada como desplazamiento serializado, `fullDrawTime` para el ratio 0-1 (que es el dato del hito 3). Aviso: los permisos se comprueban solo al entrar; con el arco ya tensado se puede hacer dash (útil para la skill 9, pero choca con la idea de que el dash interrumpa cargas: resolver con la interrupción).
+- **Hito 2 del arco: hecho y probado (2026-10-12).** **Hito 3, la carga como dato (plan 2026-10-12):** (a) daño según el tensado: `multiplier = Mathf.Lerp(minDrawDamageMultiplier, 1f, chargeRatio)` aplicado a `attackDamage` (que es el daño a carga completa); el `chargeRatio` (`DrawRatio`) se lee **en el momento del disparo**. (b) `HitReport` gana `float chargeRatio` con parámetro opcional `= 1f` al final del constructor (las acciones instantáneas, como la espada, cuentan como "carga completa"; así el código de la espada no cambia). (c) `SkillDefinition` gana `minChargeRatio` (default 0) y `maxChargeRatio` (default 1) para los requisitos de las skills de arco "disparo potente" (carga completa) y "disparo rápido" (sin tensar todo). **Tarea junior del usuario:** escribir esos dos campos y el chequeo en `SkillDefinition.IsSatisfiedBy`, partiéndolo en métodos chicos (`ContextMatches`, `ChargeMatches`, `ActionMatches`), y crear dos entradas de prueba en `SkillsData`. Falta aún el tipo de arma (`Sword`/`Bow`) en reporte y definición: sin él, una skill con `minChargeRatio` alto también la cumpliría la espada (que reporta 1).
+- **Revisión del hito 3 (2026-10-13):** daño por carga y `chargeRatio` en `HitReport` correctos; la tarea junior (campos `minChargeRatio` / `maxChargeRatio` y `IsSatisfiedBy` partido en `ContextMatches`, `ChargeMatches`, `MinTargetsMatches`, `ActionMatches`) bien hecha, con dos correcciones pedidas: (1) **regresión** en `ActionMatches`: debe ser `requiredActionSkillId == 0 || report.action.skillId == requiredActionSkillId` (sin el `0 ||` los golpes de skills no cuentan para ningún requisito); (2) quitar `using NUnit.Framework;` (chocaba con `Range` de Unity y obligó a escribir `[UnityEngine.Range]`). **Hueco de diseño conocido:** la espada reporta `chargeRatio = 1`, así que sus golpes desbloquean "Full Charge" (de arco); siguiente tarea sugerida: tipo de arma (`WeaponType`: `Sword` / `Bow`) en `HitReport` y `SkillDefinition`.
+- **Git — hecho el 2026-10-13 (a pedido del usuario, Claude hizo los commits y la rama):** commit `e7a1e205` (limpieza: se quitó la plantilla URP `TutorialInfo` + `Readme.asset`, intencional del usuario, y 7 archivos `*CommandBuffer.cs` sueltos en la raíz, que el usuario confirmó no haber agregado) y commit `4e6befb7` (sistema de combate completo: espada, arco, skills, layers, escena, modelo del arco y animaciones del hacha). `main` = estable y funcional (2 commits adelante de `origin/main`, **sin push** todavía); `develop` = rama de trabajo para implementaciones nuevas (el usuario trabaja ahí). Los avisos "LF will be replaced by CRLF" al hacer `git add` son normales en Windows. **Notas anteriores sobre el plan, ya cumplidas:** la raíz del repositorio es la carpeta del proyecto Unity (incluye escenas y `ProjectSettings`); `.gitignore` excluye `Library`, `Temp`, `Logs`, `UserSettings`. Solo hay un commit y muchos cambios sin guardar. Plan del usuario: rama estable (`main`) y rama de implementaciones nuevas (`develop`, y ramas `feature/...` opcionales). Antes de ramificar, hacer un commit de lo que funciona. `ProjectSettings/TagManager.asset` (layers como `Enemy`) debe entrar en el commit. Siete archivos `.cs` sueltos en la raíz (`ComputeCommandBuffer.cs`, `IBaseCommandBuffer.cs`, etc.) están trackeados fuera de `Assets` y no se compilan: probablemente generados por el IDE, candidatos a `git rm`. Guardar todo en Unity (`Ctrl+S`) antes de cada commit; evitar editar la misma escena en dos ramas a la vez (conflictos de merge difíciles). Claude no hace commits salvo que se lo pidan.
+- Orden: espada concreta (hecha) → base de armas → validar con el arco (el caso más distinto). `equippedWeapon` hoy es `SwordWeapon` concreto, a propósito. Cuando empiece con ScriptableObjects, extraer los datos que se repitan entre armas.
+- **Sistema de equipar (más adelante):** en vez de que el arma busque al controller en `Awake` (`GetComponentInParent`), el controller le entrega la referencia al equipar (`weapon.Initialize(this)`, parte de la futura interfaz de arma) y `equippedWeapon` se asigna en runtime. Si se cambia de arma durante `Attacking`, hay que interrumpir. Alternativa más desacoplada: el arma lanza un evento C# y el controller se suscribe/desuscribe.
+
+### 3.5 Animación
+
+- Un Animator por arma. El código controla la velocidad con un parámetro float (`AttackSpeed`) asignado como Multiplier del estado de ataque. Misma animación, velocidad variable según la habilidad del jugador.
+- Una sola fuente de verdad para la duración: la animación avisa el final con un Animation Event. Un Animation Event solo encuentra métodos en componentes **del mismo GameObject que el Animator**, por eso el método receptor está en `SwordWeapon` y este reenvía al controller. Otro evento marcará el frame de impacto (hit detection, al final).
+- El código manda y el Animator obedece. Hay que configurar a mano cada Animator Controller de los assets comprados. Los clips importados son de solo lectura: los eventos se agregan en la pestaña Animation del import o en una copia.
+- Arma de mentira para probar: un cubo hijo de la cámara con un Animator mínimo (Idle, Swing, Trigger `Attack`, Float `AttackSpeed`). Ya funciona.
+
+### 3.6 Interrupción de ataques cargados (dash esquiva)
+
+- Distinguir finalización de interrupción: al cancelar una carga no debe aplicarse el efecto ni cobrarse el recurso completo (método `Interrupt` separado o razón de salida).
+- El propio estado decide si es interrumpible según su subfase (cargando vs liberando).
+- Un único punto de entrada genérico "solicitar interrupción" en el controlador de combate, usable por dash, aturdimiento, muerte o cambio de arma. El dash, al entrar, lo llama.
+- El dash es un estado de locomoción normal.
+
+### 3.7 Input
+
+- Separado por responsabilidad:
+  - `IInputManager` / `InputManager`: locomoción.
+  - `ICombatInputManager` / `CombatInputManager`: `PrimaryAttack` (pulso), `SecondaryAttack` (pulso), `SecondaryHeld` (nivel, `isPressed`), `SecondaryReleased` (pulso al soltar).
+  - `IUIInputManager`: futuro (diálogo, inventario, menú).
+- Regla: pulso (`wasPressedThisFrame`) para acciones puntuales, nivel (`isPressed`) para mantener, released para el instante de soltar.
+- Fields con minúscula inicial (`combatInput`, `uiInput`), nunca con el mismo nombre que la clase.
+
+### 3.8 Desbloqueo de habilidades (diseño acordado 2026-10-03; nada implementado todavía)
+
+Fuente: el CSV de requisitos (ver arriba). Es una base que se va a modificar.
+
+- **Dos fases:**
+  1. **Desbloqueo:** el jugador juega normal y el juego **cuenta** las acciones que cumplen el requisito de cada skill (ej.: id 9, acertar flechas durante un dash). Al llegar a la cantidad, la skill se desbloquea. El progreso se guarda.
+  2. **Uso:** una vez desbloqueada es una habilidad activa normal, asignada a una tecla (1, Q...). **No exige condiciones especiales** de locomoción. Excepción: las de sigilo, donde estar agachado da un **bono** pero no restringe.
+- Para contar, hay que registrar el ataque primario o secundario **junto con el contexto de locomoción en que ocurre** (ids 4 agachado; 9 y 19 dash; 10 salto o caída; 21 slide; 20 dash + bloqueo con escudo). Ahí se reutiliza `LocomotionContext` y el filtro `(required & current) != 0`.
+- **Tipos de requisito en el CSV:**
+  - Acierto o ataque + contexto de locomoción: 4, 9, 10, 19, 21 (y 20, que mezcla dash y bloqueo).
+  - Rachas: 1 (disparos sin fallar), 11 (atacar varias veces seguidas), 15 (recibir daño seguido sin morir).
+  - Mantener botón: 3 (arco tensado), 12 (mantener ataque). 2: disparar sin tensar del todo.
+  - Estado del objetivo o distancia: 5 (enemigo en movimiento), 7 (larga distancia), 17 (2+ enemigos con un ataque), 18 (enemigo de nivel similar con 40% de vida), 6 (3+ enemigos con una ráfaga de disparo rápido, depende de la skill 2).
+  - Defensivos: 13 (ser bloqueado), 14 (bloquear), 16 (sobrevivir con vida crítica).
+  - No combate: 8 (recuperar flechas).
+- **Dirección propuesta (no implementada):** el juego emite **eventos** (acierto con contexto, objetivo y distancia; bloqueo; daño recibido...) y un tracker de desbloqueo evalúa los requisitos. Cada requisito es **dato** (tipo de evento, contexto requerido como flags, cantidad, racha o total), no código por skill.
+- **Dependen de sistemas que todavía no existen:** hit detection, vida y daño, bloqueo/escudo, input de habilidades por tecla (nuevos `CombatSlot` tipo `Skill1...`), guardado del progreso.
+- **Decisiones del usuario (2026-10-03):**
+  1. **Se cuenta al impactar, siempre**, para que no sea fácil aprender habilidades. Excepción: las no combativas (id 8 y otras futuras), que se cuentan por su propio evento. Consecuencia: **hit detection (y un objetivo con vida) pasa a ser requisito previo** del sistema de desbloqueo.
+  2. **El progreso se cuenta siempre**, tenga o no el libro. El libro es herramienta del jugador (subir de nivel habilidades con puntos) y además trae **escritas las condiciones** de desbloqueo (pistas). Sin libro el jugador igual puede desbloquear y asignar la skill a su slot, pero prueba acciones **a ciegas**. Se empieza sin libros; se compran libros básicos (habilidades y mejoras básicas); en la mazmorra hay libros **muy raros** con todas las habilidades de una clase.
+  3. El progreso de cada acción se guarda en **un script en el jugador**.
+- **Interpretación confirmada por el usuario (2026-10-03):** como se cuenta sin libro, las definiciones de requisitos tienen que existir **globalmente** (un registro de todas las skills, con id, clase y requisito), no "dentro" de cada libro en el código. El libro funciona como vista de esas definiciones (qué pistas muestra, qué skills se pueden subir de nivel). Los datos de progreso (contadores por id de skill) van aparte de las definiciones, en una clase simple serializable, pensando en el guardado.
+- **Decisión confirmada (2026-10-03): el contexto se captura al iniciar la acción y se confirma al impactar.** Si impacta, se registra; si falla, se descarta. Aplica igual a flechas (disparo en el aire) y a dash attack. Detalle: (cuando el jugador se comprometió), y que viaje con el ataque o el proyectil hasta el impacto. Motivos: un dash dura poco y el frame de impacto del swing puede llegar cuando ya terminó; una flecha disparada saltando impacta cuando el jugador ya aterrizó.
+- **Preguntas abiertas:**
+  3. Skills con movimiento (9, 10, 19, 20, 21) hacen que el **combate ordene movimiento a la locomoción** (impulso, dash). Eso rompe la regla "locomoción no sabe que existe combate": hace falta un canal de pedido de movimiento externo. Decidir más adelante.
+  4. Cuántas teclas de habilidad hay y si el jugador elige cuáles equipar.
+  5. Dependencias entre skills (6 usa la 2) y mecánicas que no existen (bloqueo, escudo para 13, 14, 20).
+
+**Esquema de ids de skill definitivo (decidido por el usuario, 2026-10-11):** bloques de 100 por categoría: **101, 102, 103... movilidad**; **201, 202... espada**; **301, 302... hacha**; **400s arco**; **500s daga**; **600s bastón**; **700s varita**. Si hace falta más variedad, se diferencia con bloques de 1000. (Interpretación a confirmar: el arco usa 401, 402... y así las demás.) Los ids 1-21 del CSV y los de prueba (17, 19, 10) son provisionales y se reemplazarán al hacer la versión final.
+
+**Plan de la primera implementación del desbloqueo (2026-10-04, en curso):**
+- Skills de prueba creadas por el usuario: **id 19** (`Dashing`, 3 veces, 1 objetivo) e **id 17** (golpe giratorio, 3 veces, mínimo 2 objetivos; contexto debería ser `All`). Ambas de guerrero/espada. La id 4 es de arquero: esperar al arco.
+- **Datos (2026-10-05):** `SkillsData` tenía arrays paralelos (frágiles). Se recomendó una clase `[Serializable] SkillDefinition` (campos simples + `IsSatisfiedBy(HitReport)`) y un único asset `SkillsData` con `SkillDefinition[] skills` como registro. Un swing cuenta 1 vez; tipo de arma diferido hasta el arco.
+- Cadena: impacto confirmado → `HitReport` (hechos, sin lógica: acción, `startContext`, objetivos golpeados) → `PlayerCombatController` anuncia un `event` (el arma llama al controller, igual que `OnActionFinished`) → `SkillProgress` (script en el jugador: registro de definiciones, contadores por id, desbloqueadas) → skill desbloqueada.
+- `SkillDefinition` = `ScriptableObject`, un asset por skill (id, nombre, contextos requeridos como flags, cantidad, mínimo de objetivos por golpe, default 1). La definición se **evalúa a sí misma** (`IsSatisfiedBy(report)`); `SkillProgress` solo pregunta y cuenta.
+- **Un swing = un aviso** (un golpe a varios enemigos es un solo `HitReport` con `targetsHit = N`). Un fallo no emite nada. Confirmado por el usuario (2026-10-05): un swing cuenta 1 vez para el contador.
+- Tipo de arma (`Sword`/`Bow`) en el aviso y en la definición: decidido dejarlo para más adelante, cuando llegue el arco.
+- Estado (2026-10-05): **hitos 1 a 3 completos y probados.** `HitReport`, el event `HitConfirmed` + `ReportHit` en el controller, `SwordWeapon` avisando solo al impactar, `SkillDefinition`/`SkillsData` y `SkillProgress` cuentan y desbloquean correctamente las ids 19 y 17. Pendiente de limpieza: typos `IsSatidfiedBy`, `minTagersPerHit` y `skillIcons` (plural para un solo `Sprite`); renombrar un field serializado pierde su valor en el asset. Todavía no se guarda el progreso ni existe el uso de una skill desbloqueada.
+- Hitos: (1) aviso + listener temporal con log; (2) definiciones 19 y 21; (3) `SkillProgress` con log de desbloqueo.
+
+**Plan: skill desbloqueada usable (2026-10-05, en curso), empezando por la id 17:**
+- Input `Skill1` (tecla Q, pulso) en `ICombatInputManager` + `CombatInputManager` (ambas ramas: Input System y legacy); nuevo `CombatSlot.Skill1` y su `case` en `SwordWeapon.GetAction` (el `default: throw` avisa si falta).
+- Permiso de botón: nuevo flag `Skill` en `CombatPermissions` (`All` lo incluye). Dash escribe solo `Primary`, así que no puede lanzar skills.
+- Compuerta en `CombatIdleState.TryStartAction`, junto a permiso y contexto: `CombatAction.skillId` (0 = ataque normal, sin requisito) + `SkillProgress.IsUnlocked(skillId)`; el controller toma la referencia con `GetComponent`. Aviso: ahora `PlayerCombatController` y `SkillProgress` se conocen mutuamente (aceptable por ahora).
+- Acción en área alrededor del jugador: `attackRange == attackRadius` hace que el centro de la esfera caiga en `hitOrigin` (omnidireccional), sin cambiar código.
+- **Decidido (2026-10-05):** los golpes hechos con una skill **sí cuentan** para los requisitos de otras, y se quiere dejar la base para **combinar skills**: variantes que se aprenden cumpliendo el requisito de una skill dentro de un contexto (idea, no confirmada: golpe giratorio en `Dashing` → variante "forward dash spinning attack"). Base: `HitReport` ya lleva `action` (con `skillId`); falta `requiredActionSkillId` (0 = cualquier acción) en `SkillDefinition` y comparar `report.action.skillId` en `IsSatisfiedBy`. Para poder **lanzar** una skill durante el dash, Dash tendría que incluir el flag `Skill` en sus permisos (hoy solo `Primary`). **Aclaración del usuario (2026-10-05):** no hay selección de variante por contexto. La variante es una **skill nueva e independiente** que el jugador asigna a la tecla (slot) como cualquier otra y que ejecuta giro + dash a la vez. Para **desbloquearla** solo debe lanzar el giro normal una vez durante un dash (`requiredActionSkillId = 17` + `requiredContexts = Dashing`). Consecuencias: (1) los slots de skill deben ser **asignables** (tecla → skill id → acción) en vez de `skill1Action` fijo en el arma (hoy es provisional); (2) para completar el requisito el Dash debe permitir `Skill`; (3) ejecutar giro + dash a la vez es el combate ordenando movimiento a la locomoción (pregunta abierta 3).
+- **Hallazgo posterior (2026-10-05):** la compuerta ya está agregada y `skillId` es `int`, `skillProgress` y `minTargetsPerHit` están corregidos, pero la skill nunca se desbloqueaba porque en `SkillsData.asset` los **ids estaban cruzados** (id 17 con datos de DashAttack, id 19 con los de Spinning Attack) mientras la acción del Q usa `skillId: 17`. Según el CSV: **17 = golpe giratorio, 19 = golpe con arremetida**. Typo de dato: "Spinnig Attack". Corregir ids y guardar el asset (`Ctrl+S`).
+- **Revisión (2026-10-05):** hitos 1 y 3 correctos. **Falta la compuerta de desbloqueo** (nadie llama a `IsUnlocked`; Q funciona aunque la skill no esté desbloqueada). Arreglos: `CombatAction.skillId` debe ser `int` (hoy `float`); renombrar el field `IsUnlocked` (type `SkillProgress`) del controller a `skillProgress`; chequeo `if (action.skillId != 0 && !ctx.skillProgress.IsUnlocked(action.skillId)) return;` en `TryStartAction`. Typos: `minTagetsPerHit` (usar `[FormerlySerializedAs]` para no perder el valor), una `L` suelta en un comentario de `CombatIdleState`.
+- Hitos: (1) tecla dispara la acción sin compuerta; (2) compuerta de desbloqueo; (3) configurar la acción en el Inspector.
+
+### 3.9 Hit detection (en curso, 2026-10-04)
+
+- Cuerpo a cuerpo: consulta instantánea en el frame de impacto (`Physics.OverlapSphere`) desde un `hitOrigin` (objeto vacío hijo de la cámara), no un collider en la hoja del arma (frágil con assets animados de la Store). Las flechas serán objetos que viajan, pero el resultado de un impacto debe tener la misma forma para que el tracker no distinga arma.
+- Datos por acción en `CombatAction` (editables en el Inspector por arma): `attackRange` (alcance máximo desde `hitOrigin`), `attackRadius`, `attackDamage`, y el nombre. Centro de la esfera: `hitOrigin.position + hitOrigin.forward * (attackRange - attackRadius)`.
+- El arma recibe el Animation Event de impacto (`AnimEvent_ActionHit`) igual que el de fin. En `BeginAction` guarda `currentAction` y `startContext`.
+- **Regla:** el contexto se captura **al iniciar**, la geometría de la esfera se calcula **al impactar** (si no, un dash attack deja la esfera atrás).
+- Daño por interfaz `IDamageable` (`CurrentHealth`, `TakeDamage`). `TargetDummy` es el objetivo de prueba. El arma habla solo con la interfaz.
+- Hecho y probado (2026-10-04): centro calculado al impactar, `GetComponentInParent<IDamageable>()`, `HashSet` anti-duplicados, `LayerMask` asignado, gizmo en vivo con `OnDrawGizmosSelected` (nunca llamarlo a mano; Unity lo llama solo). Verificado: el contexto del log es el del inicio (ej.: `Dashing`).
+- Hecho: log distinto para impacto y fallo con `damageablesHit.Count > 0`, evaluado **después** del `foreach` (dentro del loop nunca corre en fallo). El `else` es donde se descarta el contexto; el `if` es donde se avisa al tracker de desbloqueo.
+- Para más adelante: reutilizar el array (`OverlapSphereNonAlloc`) y el `HashSet`; `currentAction` no se limpia si el ataque sale por timeout.
+- **Siguiente paso propuesto:** probar el desbloqueo completo con ids 19 (impactos en `Dashing`) y 4 (impactos a varios enemigos en `Crouching`): aviso de "impacto confirmado" (acción + contexto de inicio + objetivo), script de progreso en el jugador con contadores por id, y requisito como dato.
+- Limitación conocida: una esfera puede golpear a través de una pared fina; falta chequeo de línea de visión.
+
+## 4. Lecciones aprendidas (aplican a todo el proyecto)
+
+- Variables compartidas (`targetFov`, permisos, contexto) se escriben en **cada frame** de `UpdateState`, no solo en `EnterState`; si no, el estado siguiente las pisa.
+- `CheckSwitchStates()` va al **final** de `UpdateState`. Si va al principio, el estado viejo sigue ejecutando el resto del método y pisa lo que dejó el `EnterState` del nuevo (así se perdía el FOV del dash).
+- Las instancias de estado se crean nuevas en cada transición (`new` en la factory): sus fields arrancan en 0. Un valor que debe sobrevivir entre estados (p. ej. `fovChangeSpeed`) se guarda en `EnterState` y se restaura en `ExitState`. El bug del dash fue `fovChangeSpeed = 0` (FOV congelado: `SmoothDamp` con tiempo infinito). Por lo mismo, los flags de "terminó" se resetean en `EnterState`.
+- Dash: la dirección se captura una sola vez en `EnterState` (fallback: `forward`).
+- Un namespace no "conecta" archivos: solo evita colisiones de nombres. Todo el proyecto usa el mismo.
+- Evitar nombres iguales entre namespace, type y field.
+- `[RequireComponent]` no funciona con interfaces.
+- Unity nunca deja un field `[Serializable]` en `null`: un "slot vacío" se detecta por sus datos (ej.: `animatorTrigger` vacío), no por `null`.
+- Un ternario solo distingue dos casos; para enums que van a crecer usar `switch` con `default`.
+- Unity guarda assets (ScriptableObject, prefabs, escenas) en disco solo al guardar el proyecto (`Ctrl+S`). El Inspector muestra lo que está en memoria; el archivo `.asset` puede estar desactualizado.
+- Un resultado (impacto/fallo) se evalúa **después** del `foreach` que cuenta, nunca dentro: dentro del loop no corre cuando no hay elementos.
+- `override` reemplaza un método; `new` solo lo **oculta**: llamado por una referencia del tipo base o de la interfaz, se ejecuta el de la base (en el arco, `new BeginAction` dejaba correr el de la base y rompía con un `Animator` vacío).
+- Una interfaz solo **declara**; los cuerpos por defecto van en la clase base como `virtual`. Un *default interface method* compila, pero si la clase base no tiene el miembro, un `Tick` propio de la clase derivada nunca se ejecuta al llamarlo por la interfaz (queda el de la interfaz, en silencio).
+- Antes de leer un campo de un valor que puede ser `null` (`action.animatorTrigger` cuando `action = null`), comprobar el `null` primero.
+- **Separar el visual del punto de mira:** nunca usar el `transform` de un modelo (rotado o movido para que se vea bien) como origen o dirección de un disparo o golpe; usar un objeto vacío sin rotación (`AimOrigin`).
+- **Fallar rápido, sin respaldos silenciosos:** una configuración incorrecta (referencia vacía) debe dar un error claro (`Debug.LogError(..., this)`), no adaptarse en silencio con un valor por defecto (así se escondió el bug del rayo hacia la izquierda).
+- **Nunca** dejar `using UnityEditor...` en scripts de runtime: compilan en el Editor y fallan al hacer Build. Revisar los `using` que agrega el autocompletado del IDE.
+- **`CombatAction.skillId` significa "esta acción ES la skill X y requiere estar desbloqueada"** (la compuerta de `TryStartAction` la comprueba al entrar). Los ataques normales (golpe de espada, tensar el arco) llevan `skillId = 0`. Una skill como la 10 ("disparo en el aire") es un **requisito que se cuenta** en `SkillsData`, no la identidad del disparo normal. Ponerle `skillId = 10` al tensado creó un círculo sin salida (hallado 2026-10-11).
+- El punto de mira para hitscan debe estar en el **centro de la cámara** (posición local `0,0,0`); un origen desplazado lanza el rayo paralelo y la flecha cae lejos de la mira a distancia.
+- `Vector3` y `Vector2` se convierten entre sí de forma implícita: usar `Vector2.Lerp` (o cualquier método de `Vector2`) con posiciones 3D **compila sin avisos pero descarta la coordenada Z** (el arco saltaba a `z = 0`). Revisar siempre el tipo del método (`Vector3.Lerp`) al mover objetos 3D. Hallado 2026-10-12.
+- Parte 2b del arco (movimiento procedural, 2026-10-12): implementada; la pose se **deriva** del estado (`currentAction != null` → objetivo = `DrawRatio`, si no 0) y se calcula siempre como `reposo + desplazamiento × proporción` (nunca se acumula). Pendientes al revisar: declarar la propiedad `private float DrawRatio => Mathf.Clamp01((Time.time - drawStartTime) / fullDrawTime);`, cambiar `Vector2.Lerp` por `Vector3.Lerp`, quitar `using Unity.VisualScripting;`, calibrar `drawOffset` (probable eje -X por la rotación Y = -90° del contenedor).
+- Clean code en métodos: una responsabilidad por método con nombre de verbo, cláusulas de guarda en vez de `if` anidados, y aislar en un único método lo que probablemente cambie (ej.: `TryShoot` para pasar de hitscan a flecha física). No abstraer antes de la tercera repetición (regla de tres).
+
+## 5. Pendientes y problemas conocidos (verificar contra el código real)
+
+Resueltos desde la primera versión: casing del input, limpieza de `PlayerCombatController`, `CombatIdleState` leyendo el input de combate, migración a `CombatPermissions`, `CombatAttackingState` con espada/Animator/evento de fin.
+
+1. ~~Typo `OndActionFinished`~~ — resuelto (2026-10-02).
+2. ~~`CombatSlot` con `[Flags]` y `GetAction` con ternario~~ — resuelto: enum simple y `switch` con `default: throw ArgumentOutOfRangeException` (falla fuerte a propósito). Resto: los valores `= 1 << 0` / `1 << 1` en `CombatSlot` sobran (sin ellos, `Primary` = 0 y no hay valores huérfanos). `using UnityEngine.Rendering;` sobra en `SwordWeapon`.
+3. ~~`CombatAction` y `SwordWeapon` fuera del namespace~~ — resuelto.
+4. **Sin timeout en `Attacking`** (a medias): la velocidad ya está protegida con `Mathf.Max` en `BeginAction` y `ResetTrigger` antes de `SetTrigger`. Falta el timeout: si falta el Animation Event o se desactiva el arma/Animator, el jugador queda trabado. Plan: field `maxDuration` en `CombatAction` (segundos a speed 1), `timeLimit = maxDuration / speed + 0.5` en `Attacking`, salir a Idle con `Debug.LogWarning`; opcional `[Min(0.01f)]` en `speed`.
+5. **`SwordWeapon` busca el controller en `Awake`**: sirve hoy, se rompe al equipar armas en runtime (ver 3.4). Se deja para cuando llegue el sistema de equipar.
+6. **Sin guardas de `null`** (`equippedWeapon`, `animator`). (`ResetTrigger` antes de `SetTrigger` ya está hecho.)
+7. **`CombatBaseState.SwitchState` asigna `CurrentState` después de `EnterState`**: si algún `EnterState` llama a `SwitchState`, la asignación final pisa esa transición. Latente.
+8. **Contexto:** hecho el type, el field, la escritura en los 8 estados y el field `allowedContext` en `CombatAction`. Filtro corregido y probado. Sprint no está en el enum (hoy cae dentro de Grounded). Resta limpiar el `Debug.Log` temporal de `TryStartAction` y el `using System;` sobrante de `CombatIdleState`.
+9. **Dash:** falta cooldown; `ExitState` siempre vuelve a Grounded y solo se puede iniciar en suelo; confirmar el namespace de `PlayerDashState`.
+10. **`crouch` y `slide` usan las mismas teclas** (Ctrl / C).
+11. **Código duplicado:** el bloque de aceleración/desaceleración horizontal está repetido en Grounded, Crouching, Fall y Jumping (sugerido extraerlo al contexto, no hecho).
+12. **Comportamientos conocidos, no bugs:** un ataque en curso no se interrumpe al entrar al agua o colgarse de un borde (lo cubre 3.6); no hay buffer de input; si Primary y Secondary se aprietan en el mismo frame y Primary no tiene acción, Secondary también se ignora (`else if`).
+13. Cosmético: `using System;` y `using UnityEngine;` sin usar en algunos archivos nuevos.
+
+## 6. Próximos pasos propuestos
+
+1. Limpieza de los pendientes 1 a 4 (cambian poco y evitan bugs silenciosos).
+2. ~~Contexto, filtro, hit detection y tracker de progreso~~ — hecho y probado (ids 19 y 17). (a) limpieza de typos y logs y (b) skill desbloqueada usable con la tecla Q (id 17, compuerta de desbloqueo incluida) — **hechos y probados**. **Siguiente:** (c) base de armas + arco (vuelve el tipo de arma al reporte). Ver 3.4.
+3. Extraer la interfaz de arma y validar con el arco (`SecondaryHeld` / `SecondaryReleased`).
+4. Interrupción genérica + dash.
+5. Hit detection por Animation Event + daño + un enemigo básico.
+6. Sistema de equipar armas (`Initialize`, ver 3.4).
+7. Input de UI.
+8. Seguir el orden de la versión mínima (0.5): enemigos con IA, maestrías y libros, aldea, jefe, generación procedural, simulación.

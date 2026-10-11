@@ -39,7 +39,8 @@ namespace AbyssFirstPersonController
         [HideInInspector] public IInputManager input;
         [HideInInspector] public Vector3 moveDirection;
         [HideInInspector] public bool isGrounded;
-        [HideInInspector] public bool allowsCombatActions;
+        [HideInInspector] public CombatPermissions combatPermissionsType;
+        [HideInInspector] public LocomotionContext currentLocomotionContext;
 
         private PlayerBaseState currentState;
         private PlayerStateFactory states;

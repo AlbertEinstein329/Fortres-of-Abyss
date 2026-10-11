@@ -20,8 +20,9 @@ namespace AbyssFirstPersonController
         protected void SwitchState(CombatBaseState newState)
         {
             ExitState();
-            newState.EnterState();
             ctx.CurrentState = newState;
+            newState.EnterState();
+            
         }
     }
 }

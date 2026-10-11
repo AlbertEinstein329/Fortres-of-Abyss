@@ -15,7 +15,8 @@ namespace AbyssFirstPersonController
         public override void UpdateState()
         {
 
-            ctx.allowsCombatActions = true;
+            ctx.combatPermissionsType = CombatPermissions.All;
+            ctx.currentLocomotionContext = LocomotionContext.Grounded;
             ctx.targetCameraY = ctx.standingCameraHeight;
 
             bool isSprinting = ctx.input.Sprint && ctx.input.MoveInput.y > 0;

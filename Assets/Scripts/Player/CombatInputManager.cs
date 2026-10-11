@@ -54,6 +54,18 @@ namespace AbyssFirstPersonController
 #endif
             }
         }
-    }
 
+        public bool Skill1
+        {
+            get
+            {
+#if ENABLE_INPUT_SYSTEM
+                return Keyboard.current != null && Keyboard.current.qKey.wasPressedThisFrame;
+#else
+                return Input.GetKeyDown(KeyCode.Q);
+#endif
+            }
+        }
+
+    }
 }

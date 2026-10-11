@@ -1,21 +1,36 @@
 namespace AbyssFirstPersonController
 {
     using System;
-    using Unity.VisualScripting;
     using UnityEngine;
-    
+
     public class PlayerCombatController : MonoBehaviour
     {
         [Header("Combat State Machine")]
-        public CombatBaseState CurrentState;
-        public CombatStateFactory States;
+        [HideInInspector] public CombatBaseState CurrentState;
+        [HideInInspector] public CombatStateFactory States;
         [HideInInspector] public FirstPersonController fpscontroller;
-        [HideInInspector] public ICombatInputManager CombatInput;
+        [HideInInspector] public ICombatInputManager combatInput;
+        [HideInInspector] public SkillProgress skillProgress;
 
+
+        [Header("Weapon")]
+        [SerializeField] private WeaponBase equippedWeapon;
+        public IWeapon EquippedWeapon => equippedWeapon;
+
+        [HideInInspector] public bool actionFinished;
+        public event Action<HitReport> HitConfirmed;
         private void Awake()
         {
+            if (equippedWeapon == null)
+            {
+                Debug.LogError("No weapon equipped on PlayerCombatController.", this);
+                enabled = false;
+                return;
+            }
+            equippedWeapon.Initialize(this);
             fpscontroller = GetComponent<FirstPersonController>();
-            CombatInput = GetComponent<ICombatInputManager>();
+            combatInput = GetComponent<ICombatInputManager>();
+            skillProgress = GetComponent<SkillProgress>();
             States = new CombatStateFactory(this);
             CurrentState = States.Idle();
             CurrentState.EnterState();
@@ -23,10 +38,18 @@ namespace AbyssFirstPersonController
         private void Update()
         {
             CurrentState.UpdateState();
-            CurrentState.CheckSwitchStates();
+        }
+
+        public void OnActionFinished()
+        {
+            actionFinished = true;
+        }
+
+        public void ReportHit(HitReport report)
+        {
+            HitConfirmed?.Invoke(report);
+            //Debug.Log($"Hit reported: {report}");
         }
     }
 
-
 }
-
