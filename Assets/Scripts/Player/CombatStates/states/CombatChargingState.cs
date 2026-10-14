@@ -35,5 +35,13 @@ namespace AbyssFirstPersonController
                 SwitchState(combatStateFactory.Idle());
             }
         }
+
+        public override void OnInterruptRequested(InterruptReason reason)
+        {
+            if (ctx.EquippedWeapon.TryInterrupt(reason))
+            {
+                SwitchState(combatStateFactory.Idle());
+            }
+        }
     }
 }

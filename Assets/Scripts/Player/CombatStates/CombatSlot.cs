@@ -4,6 +4,7 @@ namespace AbyssFirstPersonController
     {
         Primary,
         Secondary,
+        Block,
         Skill1,
     }
 }

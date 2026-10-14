@@ -8,8 +8,9 @@ namespace AbyssFirstPersonController
     {
         public int skillId;
         public string skillName;
-        public LocomotionContext requiredContexts = LocomotionContext.All;
         public Sprite skillIcon;
+        public LocomotionContext requiredContexts = LocomotionContext.All;
+        public WeaponType requiredWeaponTypes;
         public int requirementCount = 1;
         public int minTargetsPerHit = 1;
         public int requiredActionSkillId = 0;
@@ -19,7 +20,11 @@ namespace AbyssFirstPersonController
 
         public bool IsSatisfiedBy(HitReport report)
         {
-            return ContextMatches(report) && ChargeMatches(report) && MinTargetsMatches(report) && ActionMatches(report);
+            return ContextMatches(report) 
+                && ChargeMatches(report) 
+                && MinTargetsMatches(report) 
+                && ActionMatches(report) 
+                && WeaponMatches(report);
         }
 
         private bool ContextMatches(HitReport report)
@@ -40,6 +45,11 @@ namespace AbyssFirstPersonController
         private bool ActionMatches(HitReport report)
         {
             return requiredActionSkillId == 0 || report.action.skillId == requiredActionSkillId;
+        }
+
+        private bool WeaponMatches(HitReport report)
+        {
+            return requiredWeaponTypes == WeaponType.None || (requiredWeaponTypes & report.weaponType) != 0;
         }
     }
 

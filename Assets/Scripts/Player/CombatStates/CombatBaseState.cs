@@ -24,5 +24,7 @@ namespace AbyssFirstPersonController
             newState.EnterState();
             
         }
+
+        public virtual void OnInterruptRequested(InterruptReason reason) { }
     }
 }
