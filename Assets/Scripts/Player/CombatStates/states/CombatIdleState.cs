@@ -22,8 +22,11 @@ namespace AbyssFirstPersonController
         public override void CheckSwitchStates()
         {
             CombatPermissions permissions = ctx.fpscontroller.combatPermissionsType;
-
-            if ((permissions & CombatPermissions.Primary) != 0 && ctx.combatInput.PrimaryAttack)
+            if ((permissions & CombatPermissions.Block) != 0 && ctx.combatInput.Block)
+            {
+                TryStartAction(CombatSlot.Block);
+            }
+            else if ((permissions & CombatPermissions.Primary) != 0 && ctx.combatInput.PrimaryAttack)
             {
                 TryStartAction(CombatSlot.Primary);
             }

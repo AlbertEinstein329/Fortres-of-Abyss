@@ -55,6 +55,18 @@ namespace AbyssFirstPersonController
             }
         }
 
+        public bool Block
+        {
+            get
+            {
+#if ENABLE_INPUT_SYSTEM
+                return Keyboard.current != null && Keyboard.current.eKey.isPressed;
+#else
+                return Input.GetKey(KeyCode.E);
+#endif
+            }
+        }
+
         public bool Skill1
         {
             get

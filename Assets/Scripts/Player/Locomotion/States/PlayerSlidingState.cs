@@ -25,7 +25,7 @@ namespace AbyssFirstPersonController
 
         public override void UpdateState()
         {
-            ctx.combatPermissionsType = CombatPermissions.All;
+            ctx.combatPermissionsType = CombatPermissions.AllExceptBlock;
             ctx.currentLocomotionContext = LocomotionContext.Sliding;
             if (ctx.enableSlopeSliding)
             {

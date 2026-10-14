@@ -15,6 +15,7 @@ namespace AbyssFirstPersonController
 
         protected static readonly int SpeedHash = Animator.StringToHash("AttackSpeed");
 
+        public abstract WeaponType Type { get; }
         public virtual void Initialize(PlayerCombatController combat)
         {
             this.combat = combat;
@@ -45,8 +46,14 @@ namespace AbyssFirstPersonController
 
         public virtual ActionStatus Tick(ICombatInputManager input) => ActionStatus.Finished;
 
-        public virtual void Interrupt() { }
+        public virtual bool TryInterrupt(InterruptReason reason)
+        {
+            if (currentAction == null) return false;
 
+            currentAction = null;
+            return true;
+            
+        }
 
     }
 

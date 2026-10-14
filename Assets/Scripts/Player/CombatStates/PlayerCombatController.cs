@@ -50,6 +50,32 @@ namespace AbyssFirstPersonController
             HitConfirmed?.Invoke(report);
             //Debug.Log($"Hit reported: {report}");
         }
+
+        private void OnEnable()
+        {
+            if (fpscontroller != null)
+            {
+                fpscontroller.OnPlayerDash += HandleDash;
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (fpscontroller != null)
+            {
+                fpscontroller.OnPlayerDash -= HandleDash;
+            }
+        }
+
+        private void HandleDash()
+        {
+            RequestInterrupt(InterruptReason.Dash);
+        }
+
+        public void RequestInterrupt(InterruptReason reason)
+        {
+            CurrentState.OnInterruptRequested(reason);
+        }
     }
 
 }

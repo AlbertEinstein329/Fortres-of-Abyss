@@ -15,20 +15,20 @@ namespace AbyssFirstPersonController
         public override void UpdateState()
         {
 
-            ctx.combatPermissionsType = CombatPermissions.All;
             ctx.currentLocomotionContext = LocomotionContext.Grounded;
             ctx.targetCameraY = ctx.standingCameraHeight;
 
             bool isSprinting = ctx.input.Sprint && ctx.input.MoveInput.y > 0;
             float speed = isSprinting ? ctx.sprintSpeed : ctx.walkSpeed;
 
+            ctx.combatPermissionsType = isSprinting ? CombatPermissions.AllExceptBlock : CombatPermissions.All;
             ctx.targetFov = isSprinting ? ctx.sprintFov : ctx.normalFov;
             ctx.currentBobIntensity = ctx.bobAmount * (isSprinting ? 1.5f : 1f);
             ctx.currentBobSpeed = ctx.bobSpeed * (isSprinting ? 1.3f : 1f);
             ctx.targetTilt = 0;
 
             ctx.targetCameraY = ctx.standingCameraHeight;
-
+            
             if (ctx.enableSmoothCrouch)
             {
                 ctx.characterController.height = Mathf.MoveTowards(

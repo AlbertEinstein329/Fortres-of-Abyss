@@ -22,6 +22,7 @@ namespace AbyssFirstPersonController
         private float drawStartTime;
         private float shownPose;
         private float DrawRatio => Mathf.Clamp01((Time.time - drawStartTime) / fullDrawTime);
+        public override WeaponType Type => WeaponType.Bow;
 
         public override void Initialize(PlayerCombatController combat)
         {
@@ -53,6 +54,7 @@ namespace AbyssFirstPersonController
                 case CombatSlot.Secondary:
                     return drawAction;
                 case CombatSlot.Primary:
+                case CombatSlot.Block:
                 case CombatSlot.Skill1:
                     return null;
                 default:
@@ -96,7 +98,7 @@ namespace AbyssFirstPersonController
             if (TryShoot(out IDamageable target))
             {
                 target.TakeDamage(CalculateDamage(chargeRatio));
-                combat.ReportHit(new HitReport(currentAction, fireContext, 1, chargeRatio));
+                combat.ReportHit(new HitReport(currentAction, fireContext, 1, Type, chargeRatio));
             }
 
             currentAction = null;
@@ -138,9 +140,11 @@ namespace AbyssFirstPersonController
             Debug.DrawRay(ray.origin, ray.direction * distance, color, 1f);
         }
 
-        public override void Interrupt()
+        public override bool TryInterrupt(InterruptReason reason)
         {
-            currentAction = null;
+            if (reason == InterruptReason.Dash) return false;
+
+            return base.TryInterrupt(reason);
         }
 
     }
