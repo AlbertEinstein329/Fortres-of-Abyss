@@ -126,7 +126,7 @@ namespace AbyssFirstPersonController
                 IDamageable damageable = hitCollider.GetComponentInParent<IDamageable>();
                 if (damageable != null && damageablesHit.Add(damageable))
                 {
-                    damageable.TakeDamage(new DamageInfo (CalculateDamage(), hitOrigin.position));
+                    damageable.TakeDamage(new DamageInfo(CalculateDamage(), hitOrigin.position));
                 }
 
             }
