@@ -76,6 +76,14 @@ namespace AbyssFirstPersonController
         {
             CurrentState.OnInterruptRequested(reason);
         }
+
+        public void ResetForRespawn()
+        {
+            equippedWeapon.TryInterrupt(InterruptReason.Death);
+            actionFinished = false;
+            CurrentState = States.Idle();
+            CurrentState.EnterState();
+        }
     }
 
 }

@@ -9,8 +9,9 @@ namespace AbyssFirstPersonController
 
         public float MaxHealth => maxHealth;
         public float CurrentHealth { get; private set; }
+        public event Action Changed;
+        public float Ratio => CurrentHealth / maxHealth;
         public bool IsDead => CurrentHealth <= 0f;
-
         public event Action<DamageInfo> Damaged;
         public event Action Died;
 
@@ -25,8 +26,15 @@ namespace AbyssFirstPersonController
 
             CurrentHealth = Mathf.Max(CurrentHealth - info.amount, 0f);
             Damaged?.Invoke(info);
+            Changed?.Invoke();
 
             if (IsDead) Died?.Invoke();
+        }
+
+        public void Restore()
+        {
+            CurrentHealth = maxHealth;
+            Changed?.Invoke();
         }
     }
 }

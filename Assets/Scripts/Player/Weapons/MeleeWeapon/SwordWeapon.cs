@@ -178,12 +178,15 @@ namespace AbyssFirstPersonController
 
         public override bool TryInterrupt(InterruptReason reason)
         {
-            if (currentAction == null || chargePhase == ChargePhase.Swinging)
-                return false;
-
-            if (reason == InterruptReason.Dash && !currentAction.interruptibleByDash)
+            if(reason != InterruptReason.Death)
             {
-                return false;
+                if (currentAction == null || chargePhase == ChargePhase.Swinging)
+                    return false;
+
+                if (reason == InterruptReason.Dash && !currentAction.interruptibleByDash)
+                {
+                    return false;
+                }
             }
 
             chargePhase = ChargePhase.None;
