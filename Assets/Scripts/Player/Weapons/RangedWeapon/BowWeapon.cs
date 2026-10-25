@@ -97,7 +97,7 @@ namespace AbyssFirstPersonController
 
             if (TryShoot(out IDamageable target))
             {
-                target.TakeDamage(CalculateDamage(chargeRatio));
+                target.TakeDamage(new DamageInfo(CalculateDamage(chargeRatio), hitOrigin.position));
                 combat.ReportHit(new HitReport(currentAction, fireContext, 1, Type, chargeRatio));
             }
 

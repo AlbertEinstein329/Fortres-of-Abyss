@@ -275,6 +275,14 @@ namespace AbyssFirstPersonController
             return false;
         }
 
+        public void ResetForRespawn()
+        {
+            currentVelocity = Vector3.zero;
+            moveDirection = Vector3.zero;
+            currentState = states.Grounded();
+            currentState.EnterState();
+        }
+
         private void OnTriggerEnter(Collider other)
         {
             if (((1 << other.gameObject.layer) & waterMask) != 0)
