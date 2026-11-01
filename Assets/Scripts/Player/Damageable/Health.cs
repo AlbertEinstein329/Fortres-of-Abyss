@@ -13,6 +13,7 @@ namespace AbyssFirstPersonController
         public float Ratio => CurrentHealth / maxHealth;
         public bool IsDead => CurrentHealth <= 0f;
         public event Action<DamageInfo> Damaged;
+        public Func<DamageInfo, float> DamageModifier { get; set; }
         public event Action Died;
 
         private void Awake()
@@ -24,7 +25,11 @@ namespace AbyssFirstPersonController
         {
             if (IsDead) return;
 
-            CurrentHealth = Mathf.Max(CurrentHealth - info.amount, 0f);
+            float finalDamage = DamageModifier != null ? DamageModifier(info) : info.amount;
+
+            if (finalDamage <= 0f) return;
+
+            CurrentHealth = Mathf.Max(CurrentHealth - finalDamage, 0f);
             Damaged?.Invoke(info);
             Changed?.Invoke();
 

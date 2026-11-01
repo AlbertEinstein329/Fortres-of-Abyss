@@ -16,7 +16,7 @@ namespace AbyssFirstPersonController
         [Header("Weapon")]
         [SerializeField] private WeaponBase equippedWeapon;
         public IWeapon EquippedWeapon => equippedWeapon;
-
+        public bool IsBlocking => equippedWeapon != null && equippedWeapon.IsBlocking;
         [HideInInspector] public bool actionFinished;
         public event Action<HitReport> HitConfirmed;
         private void Awake()
