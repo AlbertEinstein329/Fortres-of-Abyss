@@ -8,5 +8,6 @@ namespace AbyssFirstPersonController
         void BeginAction(CombatAction action, LocomotionContext context);
         ActionStatus Tick(ICombatInputManager input);
         bool TryInterrupt(InterruptReason reason);
+        bool IsBlocking { get; }
     }
 }
