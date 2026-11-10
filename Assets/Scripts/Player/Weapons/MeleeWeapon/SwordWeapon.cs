@@ -19,6 +19,7 @@ namespace AbyssFirstPersonController
         private float swingStartTime;
 
         public override WeaponType Type => WeaponType.Sword;
+        public override bool IsBlocking => currentAction != null && currentAction == blockAction;
         private float CurrentChargeRatio => chargePhase == ChargePhase.Swinging ? chargeRatio : 1f;
 
         public override CombatAction GetAction(CombatSlot slot)
