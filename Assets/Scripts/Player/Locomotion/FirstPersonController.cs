@@ -14,6 +14,8 @@ namespace AbyssFirstPersonController
         public float slideDuration = 0.7f;
         public float slideSpeed = 6f;
         public float dashSpeed = 20f;
+        public float dashDuration = 0.25f;
+        public float dashCooldown = 0.5f;
         public float mouseSensitivity = 2f;
         public float strafeTiltAmount = 2f;
 
@@ -35,12 +37,19 @@ namespace AbyssFirstPersonController
         public Transform groundCheck;
         public LayerMask groundMask;
 
+        [Header("Stamina costs")]
+        public float sprintStaminaPerSecond = 10f;
+        public float jumpStaminaCost = 8f;
+        public float dashStaminaCost = 25f;
+
+        [HideInInspector] public Stamina stamina;
         [HideInInspector] public CharacterController characterController;
         [HideInInspector] public IInputManager input;
         [HideInInspector] public Vector3 moveDirection;
         [HideInInspector] public bool isGrounded;
         [HideInInspector] public CombatPermissions combatPermissionsType;
         [HideInInspector] public LocomotionContext currentLocomotionContext;
+        [HideInInspector] public float nextDashTime;
 
         private PlayerBaseState currentState;
         private PlayerStateFactory states;
@@ -140,6 +149,13 @@ namespace AbyssFirstPersonController
             characterController = GetComponent<CharacterController>();
             standingCharacterControllerHeight = characterController.height;
             standingCharacterControllerCenter = characterController.center;
+            stamina = GetComponent<Stamina>();
+            if (stamina == null)
+            {
+                Debug.LogError("FirstPersonController no tiene asignado el componente Stamina.", this);
+                enabled = false;
+                return;
+            }
             input = GetComponent<IInputManager>();
             states = new PlayerStateFactory(this);
 

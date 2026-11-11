@@ -18,7 +18,8 @@ namespace AbyssFirstPersonController
             ctx.currentLocomotionContext = LocomotionContext.Grounded;
             ctx.targetCameraY = ctx.standingCameraHeight;
 
-            bool isSprinting = ctx.input.Sprint && ctx.input.MoveInput.y > 0;
+            bool wantsSprint = ctx.input.Sprint && ctx.input.MoveInput.y > 0;
+            bool isSprinting = wantsSprint && !ctx.stamina.IsExhausted && ctx.stamina.Current > 0;
             float speed = isSprinting ? ctx.sprintSpeed : ctx.walkSpeed;
 
             ctx.combatPermissionsType = isSprinting ? CombatPermissions.AllExceptBlock : CombatPermissions.All;
@@ -51,9 +52,14 @@ namespace AbyssFirstPersonController
 
             Vector2 input = ctx.input.MoveInput;
             Vector3 targetMove = ctx.transform.right * input.x + ctx.transform.forward * input.y;
-            
+
+            if (isSprinting)
+            {
+                ctx.stamina.Drain(ctx.sprintStaminaPerSecond * Time.deltaTime);
+            }
+
             // Normalize diagonal movement so they don't walk 40% faster diagonally
-            targetMove = Vector3.ClampMagnitude(targetMove, 1f); 
+            targetMove = Vector3.ClampMagnitude(targetMove, 1f);
 
             Vector3 targetVelocity = targetMove * speed;
 
@@ -67,7 +73,7 @@ namespace AbyssFirstPersonController
             finalVelocity.y = -5f; // Keep sticking to the ground
             
             ctx.characterController.Move(finalVelocity * Time.deltaTime);
-            
+
             CheckSwitchStates();
         }
 
@@ -75,7 +81,7 @@ namespace AbyssFirstPersonController
 
         public override void CheckSwitchStates()
         {
-            if (ctx.input.Jump && ctx.isGrounded)
+            if (ctx.input.Jump && ctx.isGrounded && ctx.stamina.TrySpend(ctx.jumpStaminaCost))
             {
                 SwitchState(factory.Jumping());
             }
@@ -95,7 +101,7 @@ namespace AbyssFirstPersonController
             {
                 SwitchState(factory.Swimming());
             }
-            else if (ctx.input.Dash && ctx.isGrounded)
+            else if (ctx.input.Dash && Time.time >= ctx.nextDashTime && ctx.stamina.TrySpend(ctx.dashStaminaCost))
             {
                 SwitchState(factory.Dash());
             }

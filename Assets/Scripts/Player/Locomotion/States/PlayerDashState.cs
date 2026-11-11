@@ -5,7 +5,7 @@ namespace AbyssFirstPersonController
     public class PlayerDashState : PlayerBaseState
     {
         private float dashTimer;
-        private float OrigialFovSpeed;
+        private float OriginalFovSpeed;
         private Vector3 dashDirection;
 
         public PlayerDashState(FirstPersonController currentContext, PlayerStateFactory playerStateFactory)
@@ -14,7 +14,7 @@ namespace AbyssFirstPersonController
         public override void EnterState()
         {
             ctx.InvokeDashEvent();
-            OrigialFovSpeed = ctx.fovChangeSpeed;
+            OriginalFovSpeed = ctx.fovChangeSpeed;
             dashTimer = 0f;
             dashDirection = DashDirection();
             // Start Dash Effect
@@ -36,12 +36,13 @@ namespace AbyssFirstPersonController
         {
             // End Dash Effect
             ctx.targetFov = ctx.normalFov;
-            ctx.fovChangeSpeed = OrigialFovSpeed;
+            ctx.fovChangeSpeed = OriginalFovSpeed;
+            ctx.nextDashTime = Time.time + ctx.dashCooldown;
         }
 
         public override void CheckSwitchStates()
         {
-            if (dashTimer > 0.25f)
+            if (dashTimer > ctx.dashDuration)
             {
                 SwitchState(factory.Grounded());
             }

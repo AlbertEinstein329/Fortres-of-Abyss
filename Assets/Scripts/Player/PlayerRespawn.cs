@@ -9,6 +9,7 @@ namespace AbyssFirstPersonController
         [SerializeField, Min(0f)] private float respawnDelay = 3f;
 
         private Health health;
+        private Stamina stamina;
         private FirstPersonController movement;
         private PlayerCombatController combat;
         private CharacterController characterController;
@@ -17,12 +18,14 @@ namespace AbyssFirstPersonController
         private void Awake()
         {
             health = GetComponent<Health>();
+            stamina = GetComponent<Stamina>();
             movement = GetComponent<FirstPersonController>();
             combat = GetComponent<PlayerCombatController>();
             characterController = GetComponent<CharacterController>();
 
             if (defaultCheckpoint == null) { Fail("PlayerRespawn needs a default checkpoint."); return; }
             if (health == null) { Fail("The player needs a Health component."); return; }
+            if (stamina == null) { Fail("The player needs a Stamina component."); return; }
             if (movement == null) { Fail("The player needs FirstPersonController component."); return; }
             if (combat == null) { Fail("The player needs PlayerCombatController component."); return; }
             if (characterController == null) { Fail("The player needs CharacterController component."); return; }
@@ -49,6 +52,7 @@ namespace AbyssFirstPersonController
             characterController.enabled = true;
 
             health.Restore();
+            stamina.Restore();
             movement.ResetForRespawn();
             combat.ResetForRespawn();
 

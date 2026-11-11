@@ -99,7 +99,7 @@ namespace AbyssFirstPersonController
 
         public override void CheckSwitchStates()
         {
-            if (ctx.input.Jump && ctx.isGrounded && !ctx.HasCeiling())
+            if (ctx.input.Jump && ctx.isGrounded && !ctx.HasCeiling() && ctx.stamina.TrySpend(ctx.jumpStaminaCost))
             {
                 SwitchState(factory.Jumping());
                 return;
