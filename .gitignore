@@ -46,3 +46,11 @@ Thumbs.db
 *.pfx
 *.publishsettings
 private_keys/
+# Documentacion de diseño y herramientas de ayuda: NO se suben al repositorio
+# (el diseño del juego es privado; si el repo se hace publico, esto evita filtrarlo)
+/Fortress of Abyss/
+/design/
+/production/
+/.claude/
+/project.yaml
+/project.local.yaml
