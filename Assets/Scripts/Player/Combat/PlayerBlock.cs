@@ -11,7 +11,7 @@ namespace AbyssFirstPersonController
         private Health health;
         private PlayerCombatController combat;
 
-        public event Action<DamageInfo> Blocked;
+        public event Action<DamageInfo, bool> Blocked;
 
         private void Awake()
         {
@@ -34,13 +34,17 @@ namespace AbyssFirstPersonController
 
         private float ModifyDamage(DamageInfo info)
         {
+
             if (!combat.IsBlocking || !IsFromFront(info.sourcePosition))
             {
                 return info.amount;
             }
 
-            Blocked?.Invoke(info);
-            return info.amount * blockDamageMultiplier;
+            float finalAmount = info.amount * blockDamageMultiplier;
+            bool wasComplete = finalAmount <= 0f;
+
+            Blocked?.Invoke(info, wasComplete);
+            return finalAmount;
         }
 
         private bool IsFromFront(Vector3 sourcePosition)
