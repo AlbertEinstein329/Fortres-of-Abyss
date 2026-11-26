@@ -16,24 +16,40 @@ namespace AbyssFirstPersonController
         public Func<DamageInfo, float> DamageModifier { get; set; }
         public event Action Died;
 
+        private CombatLevel combatLevel;
+        private int TargetLevel => combatLevel != null ? combatLevel.Level : 1;
+
         private void Awake()
         {
             CurrentHealth = maxHealth;
+            TryGetComponent(out combatLevel);
         }
 
-        public void TakeDamage(DamageInfo info)
+        public void ScaleMaxHealth(float multiplier)
         {
-            if (IsDead) return;
+            maxHealth *= multiplier;
+            Restore();
+        }
+
+        public DamageResult TakeDamage(DamageInfo info)
+        {
+            if (IsDead) return DamageResult.None(TargetLevel);
 
             float finalDamage = DamageModifier != null ? DamageModifier(info) : info.amount;
 
-            if (finalDamage <= 0f) return;
+            if (finalDamage <= 0f) return DamageResult.None(TargetLevel);
+
+            float previousHealth = CurrentHealth;
+            float dealt = Mathf.Min(finalDamage, previousHealth);
 
             CurrentHealth = Mathf.Max(CurrentHealth - finalDamage, 0f);
+            bool killed = IsDead;
+
             Damaged?.Invoke(info);
             Changed?.Invoke();
 
-            if (IsDead) Died?.Invoke();
+            if (killed) Died?.Invoke();
+            return new DamageResult(dealt, dealt / maxHealth, TargetLevel, killed);
         }
 
         public void Restore()

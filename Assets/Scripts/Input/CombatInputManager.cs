@@ -79,5 +79,22 @@ namespace AbyssFirstPersonController
             }
         }
 
+        public int WeaponSlotPressed
+        {
+            get
+            {
+#if ENABLE_INPUT_SYSTEM
+                if (Keyboard.current == null) return -1;
+                if (Keyboard.current.digit1Key.wasPressedThisFrame) return 0;
+                if (Keyboard.current.digit2Key.wasPressedThisFrame) return 1;
+                return -1;
+#else
+                if (Input.GetKeyDown(KeyCode.Alpha1)) return 0;
+                if (Input.GetKeyDown(KeyCode.Alpha2)) return 1;
+                return -1;
+#endif
+            }
+        }
+
     }
 }

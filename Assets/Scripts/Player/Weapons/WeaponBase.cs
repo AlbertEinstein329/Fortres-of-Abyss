@@ -8,6 +8,7 @@ namespace AbyssFirstPersonController
         [SerializeField] protected Animator animator;
         [SerializeField] protected Transform hitOrigin;
         [SerializeField] protected LayerMask enemyMask;
+        [SerializeField] private GameObject rootObject;
 
         protected PlayerCombatController combat;
         protected CombatAction currentAction;
@@ -15,6 +16,8 @@ namespace AbyssFirstPersonController
 
         protected static readonly int SpeedHash = Animator.StringToHash("AttackSpeed");
 
+        // Returns the assigned parent container if present; otherwise falls back to this GameObject.
+        public GameObject RootObject => rootObject != null ? rootObject : gameObject;
         public abstract WeaponType Type { get; }
         public virtual bool IsBlocking => false;
         public virtual void Initialize(PlayerCombatController combat)

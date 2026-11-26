@@ -11,6 +11,6 @@ namespace AbyssFirstPersonController
         bool Crouch { get; }
         bool Slide { get; }
         bool Dash { get; }
-
+        bool Interact { get; }
     }
 }

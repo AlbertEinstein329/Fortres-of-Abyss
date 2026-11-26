@@ -99,6 +99,17 @@ namespace AbyssFirstPersonController
             }
         }
 
+        public bool Interact
+        {
+            get
+            {
+#if ENABLE_INPUT_SYSTEM
+                return Keyboard.current != null && Keyboard.current.fKey.wasPressedThisFrame;
+#else
+                return Input.GetKeyDown(KeyCode.F);
+#endif
+            }
+        }
     }
 
 }

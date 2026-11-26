@@ -21,6 +21,13 @@ namespace AbyssFirstPersonController
 
         public override void CheckSwitchStates()
         {
+            int weaponSlot = ctx.combatInput.WeaponSlotPressed;
+            if (weaponSlot >= 0)
+            {
+                ctx.TryEquip(weaponSlot);
+                return;
+            }
+
             CombatPermissions permissions = ctx.fpscontroller.combatPermissionsType;
             if ((permissions & CombatPermissions.Block) != 0 && ctx.combatInput.Block)
             {

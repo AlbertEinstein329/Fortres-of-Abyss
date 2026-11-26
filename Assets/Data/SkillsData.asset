@@ -54,7 +54,7 @@ MonoBehaviour:
     minChargeRatio: 0
     maxChargeRatio: 0.5
   - skillId: 3
-    skillName: Full Charge
+    skillName: Charged Shot
     skillIcon: {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}
     requiredContexts: 71
     requiredWeaponTypes: 4

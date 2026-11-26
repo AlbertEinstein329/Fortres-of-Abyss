@@ -10,5 +10,6 @@ namespace AbyssFirstPersonController
         bool SecondaryReleased { get; }
         bool Block { get; }
         bool Skill1 { get; }
+        int WeaponSlotPressed { get; }
     }
 }

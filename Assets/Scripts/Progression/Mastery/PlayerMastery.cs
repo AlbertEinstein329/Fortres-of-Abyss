@@ -18,6 +18,7 @@ namespace AbyssFirstPersonController
         [SerializeField] private List<MasteryEntry> masteries = new List<MasteryEntry>();
 
         public event Action<MasteryType, int> LevelChanged;
+        public LevelCurve Curve => levelCurve;
 
         private void Awake()
         {
@@ -61,20 +62,6 @@ namespace AbyssFirstPersonController
                 masteries.Add(entry);
             }
             return entry;
-        }
-
-        [ContextMenu("Test: Add 65 XP to Sword")]
-        private void TestAdd65Xp()
-        {
-            AddXp(MasteryType.Sword, 65f);
-            Debug.Log($"Sword Level: {GetLevel(MasteryType.Sword)} | XP: {GetOrCreateEntry(MasteryType.Sword).xp}");
-        }
-
-        [ContextMenu("Test: Add 100000 XP to Sword")]
-        private void TestAdd100kXp()
-        {
-            AddXp(MasteryType.Sword, 100000f);
-            Debug.Log($"Sword Level: {GetLevel(MasteryType.Sword)} | XP: {GetOrCreateEntry(MasteryType.Sword).xp}");
         }
     }
 }

@@ -39,7 +39,7 @@ namespace AbyssFirstPersonController
 
         private bool MinTargetsMatches(HitReport report)
         {
-            return report.targetsHit >= minTargetsPerHit;
+            return report.TargetsHit >= minTargetsPerHit;
         }
 
         private bool ActionMatches(HitReport report)

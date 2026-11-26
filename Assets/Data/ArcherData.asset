@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d9a397230880e184ebe13bda03bf97d2, type: 3}
+  m_Name: ArcherData
+  m_EditorClassIdentifier: Assembly-CSharp::AbyssFirstPersonController.EnemyData
+  moveSpeed: 3.5
+  detectionRange: 20
+  loseTargetRange: 25
+  stoppingDistance: 1.8
+  repathInterval: 0.2
+  attackRange: 12
+  attackDamage: 10
+  windupTime: 1.5
+  recoveryTime: 1.5
+  attackHalfAngle: 60

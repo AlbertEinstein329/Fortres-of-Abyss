@@ -2,13 +2,15 @@ namespace AbyssFirstPersonController
 {
     using UnityEngine;
     using UnityEngine.AI;
+    using System;
 
-    public class EnemyController : MonoBehaviour
+    public class EnemyController : MonoBehaviour, IEnemyAttacker
     {
         private enum State { Idle, Chase, Attack, Dead }
         private enum AttackPhase { Windup, Recovery }
 
         [SerializeField] private EnemyData data;
+        [SerializeField] private Renderer bodyRenderer;
 
         private NavMeshAgent agent;
         private Health health;
@@ -19,16 +21,17 @@ namespace AbyssFirstPersonController
         private float nextRepathTime;
         private float distance;
         private float phaseEndTime;
-        private Renderer bodyRenderer;
         private Color baseColor;
+        public event Action KilledTarget;
+        private float damageMultiplier = 1f;
 
         private float WindupProgress => 1f - (phaseEndTime - Time.time) / data.windupTime;
+        public void ScaleDamage(float multiplier) => damageMultiplier *= multiplier;
 
         private void Awake()
         {
             health = GetComponent<Health>();
             agent = GetComponent<NavMeshAgent>();
-            bodyRenderer = GetComponentInChildren<Renderer>();
 
             FirstPersonController player = FindAnyObjectByType<FirstPersonController>();
             target = player != null ? player.transform : null;
@@ -175,7 +178,8 @@ namespace AbyssFirstPersonController
         {
             if (!IsTargetInStrikeZone()) return;
 
-            targetHealth.TakeDamage(new DamageInfo(data.attackDamage, transform.position));
+            DamageResult result = targetHealth.TakeDamage(new DamageInfo(data.attackDamage * damageMultiplier, transform.position));
+            if (result.killed) KilledTarget?.Invoke();
         }
 
         private void EndAttack()

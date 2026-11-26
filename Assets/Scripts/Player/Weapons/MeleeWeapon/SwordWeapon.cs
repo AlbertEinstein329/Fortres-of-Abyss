@@ -21,6 +21,8 @@ namespace AbyssFirstPersonController
         public override WeaponType Type => WeaponType.Sword;
         public override bool IsBlocking => currentAction != null && currentAction == blockAction;
         private float CurrentChargeRatio => chargePhase == ChargePhase.Swinging ? chargeRatio : 1f;
+        private readonly HashSet<IDamageable> damageablesHit = new HashSet<IDamageable>();
+        private readonly List<DamageResult> hitResults = new List<DamageResult>();
 
         public override CombatAction GetAction(CombatSlot slot)
         {
@@ -120,25 +122,21 @@ namespace AbyssFirstPersonController
             Vector3 center = hitOrigin.position + hitOrigin.forward * (currentAction.attackRange - currentAction.attackRadius);
             Collider[] hitColliders = Physics.OverlapSphere(center, currentAction.attackRadius, enemyMask);
 
-            HashSet<IDamageable> damageablesHit = new HashSet<IDamageable>();
+            damageablesHit.Clear();
+            hitResults.Clear();
 
             foreach (Collider hitCollider in hitColliders)
             {
                 IDamageable damageable = hitCollider.GetComponentInParent<IDamageable>();
                 if (damageable != null && damageablesHit.Add(damageable))
                 {
-                    damageable.TakeDamage(new DamageInfo(CalculateDamage(), hitOrigin.position));
+                    DamageResult result = damageable.TakeDamage(new DamageInfo(CalculateDamage(), hitOrigin.position));
+                    hitResults.Add(result);
                 }
-
             }
             if (damageablesHit.Count > 0)
             {
-                //Debug.Log($"Action '{currentAction.name}' hit {damageablesHit.Count} target(s) at context {startContext}.");
-                combat.ReportHit(new HitReport(currentAction, startContext, damageablesHit.Count, Type, CurrentChargeRatio));
-            }
-            else
-            {
-                //Debug.Log($"Action '{currentAction.name}' missed. Context {startContext} discarded.");
+                combat.ReportHit(new HitReport(currentAction, startContext, hitResults.ToArray(), Type, CurrentChargeRatio));
             }
         }
 
