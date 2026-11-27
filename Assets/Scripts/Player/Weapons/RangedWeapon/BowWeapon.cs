@@ -2,12 +2,12 @@ namespace AbyssFirstPersonController
 {
     using UnityEngine;
 
-
     public class BowWeapon : WeaponBase
     {
         [SerializeField] private CombatAction drawAction;
         [SerializeField] private LayerMask hitMask;
-        
+        [SerializeField] private CombatAction chargedShotAction;
+
         [Header("Draw Pose")]
         [SerializeField] private Transform bowModel;
         [SerializeField] private Vector3 drawOffset = new Vector3(0f, 0f, -0.15f);
@@ -56,7 +56,7 @@ namespace AbyssFirstPersonController
                 case CombatSlot.Primary:
                 case CombatSlot.Block:
                 case CombatSlot.Skill1:
-                    return null;
+                    return chargedShotAction;
                 default:
                     throw new System.ArgumentOutOfRangeException(nameof(slot), slot, null);
             }
@@ -83,6 +83,9 @@ namespace AbyssFirstPersonController
         {
             if (currentAction == null) return ActionStatus.Finished;
 
+            if (currentAction == chargedShotAction && DrawRatio < 1f) return ActionStatus.Running;
+            if (currentAction == chargedShotAction) return FireArrow();
+
             if (input.PrimaryAttack) return FireArrow();
             if (!input.SecondaryHeld) return CancelDraw();
 
@@ -97,8 +100,8 @@ namespace AbyssFirstPersonController
 
             if (TryShoot(out IDamageable target))
             {
-                target.TakeDamage(new DamageInfo(CalculateDamage(chargeRatio), hitOrigin.position));
-                combat.ReportHit(new HitReport(currentAction, fireContext, 1, Type, chargeRatio));
+                DamageResult result = target.TakeDamage(new DamageInfo(CalculateDamage(chargeRatio), hitOrigin.position));
+                combat.ReportHit(new HitReport(currentAction, fireContext, new[] { result }, Type, chargeRatio));
             }
 
             currentAction = null;
