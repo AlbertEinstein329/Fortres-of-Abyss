@@ -46,7 +46,7 @@ namespace AbyssFirstPersonController
 
             mastery.AddXp(type, xpGained);
 
-            Debug.Log($"[Mastery] {type} +{xpGained:F2} XP | Nivel actual: {mastery.GetLevel(type)}");
+            //Debug.Log($"[Mastery] {type} +{xpGained:F2} XP | Nivel actual: {mastery.GetLevel(type)}");
         }
 
         private float HitXp(HitReport report, int masteryLevel)
